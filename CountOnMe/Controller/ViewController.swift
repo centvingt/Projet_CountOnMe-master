@@ -21,25 +21,25 @@ class ViewController: UIViewController {
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(updateTextView),
-            name: Notification.Name.udpatedExpression,
+            name: .udpatedExpression,
             object: nil
         )
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(presentAlert),
-            name: Notification.Name.operatorAlreadySet,
+            name: .operatorAlreadySet,
             object: nil
         )
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(presentAlert),
-            name: Notification.Name.notCorrectExpression, 
+            name: .notCorrectExpression,
             object: nil
         )
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(presentAlert),
-            name: Notification.Name.notEnoughElement,
+            name: .notEnoughElement,
             object: nil
         )
     }

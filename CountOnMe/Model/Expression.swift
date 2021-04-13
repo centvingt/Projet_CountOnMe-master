@@ -11,35 +11,10 @@ import Foundation
 class Expression {
     var elements = [String]() {
         didSet {
+            print(elements)
             let notification = Notification(name: .udpatedExpression)
             NotificationCenter.default.post(notification)
         }
-    }
-    
-    // Error check computed variables
-    var isCorrect: Bool {
-        return elements.last != "+" && elements.last != "-"
-    }
-    
-    var haveEnoughElement: Bool {
-        return elements.count >= 3
-    }
-    
-    var canAddOperator: Bool {
-        return elements.last != "+" && elements.last != "-"
-    }
-    
-    var haveResult: Bool {
-        return elements.firstIndex(of: "=") != nil
-    }
-    
-    enum ExpressionError {
-        case connection
-        case undefined
-        case response
-        case statusCode
-        case data
-        case pictures
     }
     enum Element {
         case number(String),
@@ -47,12 +22,37 @@ class Expression {
              minus,
              equal
     }
+//    enum Op {
+//        case plus = "+", minus = "-"
+//    }
+
+    // Error check computed variables
+    private var isCorrect: Bool {
+        return elements.last != "+" && elements.last != "-"
+    }
+    
+    private var haveEnoughElement: Bool {
+        return elements.count >= 3
+    }
+    
+    private var canAddOperator: Bool {
+        return elements.last != "+" && elements.last != "-"
+    }
+    
+    private var haveResult: Bool {
+        return elements.firstIndex(of: "=") != nil
+    }
     
     func add(element: Element) {
         switch element {
-        case .number(let string):
+        case .number(var string):
             if haveResult {
                 elements = []
+            }
+            if let lastString = elements.last,
+               lastString != "-" && lastString != "+" {
+                elements.removeLast()
+                string = lastString + string
             }
             elements.append(string)
         case .plus, .minus:
@@ -68,7 +68,6 @@ class Expression {
         }
     }
     private func setResult() {
-        print("plus")
         guard isCorrect else {
             let notification = Notification(name: .notCorrectExpression)
             NotificationCenter.default.post(notification)
@@ -94,7 +93,7 @@ class Expression {
             switch operand {
             case "+": result = left + right
             case "-": result = left - right
-            default: fatalError("Unknown operator !")
+            default: fatalError("Unknown operator!")
             }
             
             operationsToReduce = Array(operationsToReduce.dropFirst(3))
@@ -102,7 +101,6 @@ class Expression {
         }
         
         let array = ["=", "\(operationsToReduce.first!)"]
-//        elements.append("= \(operationsToReduce.first!)")
         elements = elements + array
     }
     private func getOperatorString(from element: Element) -> String {
@@ -111,7 +109,7 @@ class Expression {
             return "+"
         case .minus:
             return "-"
-        default:
+        case .number, .equal:
             fatalError("This is not an operator!")
         }
     }
