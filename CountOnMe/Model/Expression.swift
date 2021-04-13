@@ -20,15 +20,23 @@ class Expression {
         case number(String),
              plus,
              minus,
+             time,
+             dividedBy,
              equal
     }
-//    enum Op {
-//        case plus = "+", minus = "-"
-//    }
-
+    private enum Operand: String {
+        case plus = "+",
+             minus = "-",
+             time = "×",
+             dividedBy = "÷"
+    }
+    
     // Error check computed variables
     private var isCorrect: Bool {
-        return elements.last != "+" && elements.last != "-"
+        return elements.last != "+"
+            && elements.last != "-"
+            && elements.last != "×"
+            && elements.last != "÷"
     }
     
     private var haveEnoughElement: Bool {
@@ -36,7 +44,10 @@ class Expression {
     }
     
     private var canAddOperator: Bool {
-        return elements.last != "+" && elements.last != "-"
+        return elements.last != "+"
+            && elements.last != "-"
+            && elements.last != "×"
+            && elements.last != "÷"
     }
     
     private var haveResult: Bool {
@@ -50,12 +61,18 @@ class Expression {
                 elements = []
             }
             if let lastString = elements.last,
-               lastString != "-" && lastString != "+" {
+               lastString != "-"
+                && lastString != "+"
+                && lastString != "×"
+                && lastString != "÷" {
                 elements.removeLast()
                 string = lastString + string
             }
             elements.append(string)
-        case .plus, .minus:
+        case .plus,
+             .minus,
+             .time,
+             .dividedBy:
             guard canAddOperator else {
                 let notification = Notification(name: .operatorAlreadySet)
                 NotificationCenter.default.post(notification)
@@ -80,7 +97,60 @@ class Expression {
             return
         }
         
-        // Create local copy of operations
+        let resultArray = makeCalculations(elements: elements)
+        
+        let array = ["=", "\(resultArray.first!.replacingOccurrences(of: ".", with: ","))"]
+        elements = elements + array
+    }
+    private func makeCalculations(elements: [String]) -> [String] {
+        var copyElements = elements
+        
+        if copyElements.contains("×") {
+            var multiplicationElements = [String]()
+
+            while copyElements.contains("×") {
+                if let index = copyElements.firstIndex(of: "×") {
+                    multiplicationElements += makeAdditionsAndSubstractions(elements: Array(copyElements.prefix(index)))
+                    copyElements.removeSubrange(0...index)
+                }
+            }
+            multiplicationElements += makeDivisions(elements: copyElements)
+            while multiplicationElements.count > 1 {
+                let left = Float(multiplicationElements[0])!
+                let right = Float(multiplicationElements[1])!
+                let result = left * right
+                multiplicationElements = Array(multiplicationElements.dropFirst(2))
+                multiplicationElements.insert("\(result)", at: 0)
+            }
+    //        divisionElements[0] = divisionElements[0].replacingOccurrences(of: ".", with: ",")
+            return multiplicationElements
+        }
+        if copyElements.contains("÷") {
+            return makeDivisions(elements: copyElements)
+        }
+        return makeAdditionsAndSubstractions(elements: copyElements)
+    }
+    private func makeDivisions(elements: [String]) -> [String] {
+        var copyElements = elements
+        var divisionElements = [String]()
+
+        while copyElements.contains("÷") {
+            if let index = copyElements.firstIndex(of: "÷") {
+                divisionElements += makeAdditionsAndSubstractions(elements: Array(copyElements.prefix(index)))
+                copyElements.removeSubrange(0...index)
+            }
+        }
+        divisionElements += makeAdditionsAndSubstractions(elements: copyElements)
+        while divisionElements.count > 1 {
+            let left = Float(divisionElements[0])!
+            let right = Float(divisionElements[1])!
+            let result = left / right
+            divisionElements = Array(divisionElements.dropFirst(2))
+            divisionElements.insert("\(result)", at: 0)
+        }
+        return divisionElements
+    }
+    private func makeAdditionsAndSubstractions(elements: [String]) -> [String] {
         var operationsToReduce = elements
         
         // Iterate over operations while an operand still here
@@ -89,19 +159,13 @@ class Expression {
             let operand = operationsToReduce[1]
             let right = Int(operationsToReduce[2])!
             
-            let result: Int
-            switch operand {
-            case "+": result = left + right
-            case "-": result = left - right
-            default: fatalError("Unknown operator!")
-            }
+            let result = operand == "+" ? left + right : left - right
             
             operationsToReduce = Array(operationsToReduce.dropFirst(3))
             operationsToReduce.insert("\(result)", at: 0)
         }
         
-        let array = ["=", "\(operationsToReduce.first!)"]
-        elements = elements + array
+        return operationsToReduce
     }
     private func getOperatorString(from element: Element) -> String {
         switch element {
@@ -109,6 +173,10 @@ class Expression {
             return "+"
         case .minus:
             return "-"
+        case .time:
+            return "×"
+        case .dividedBy:
+            return "÷"
         case .number, .equal:
             fatalError("This is not an operator!")
         }

@@ -59,7 +59,15 @@ class ViewController: UIViewController {
     @IBAction func tappedSubstractionButton(_ sender: UIButton) {
         expression.add(element: .minus)
     }
-
+    
+    @IBAction func tappedMultiplicationButton(_ sender: UIButton) {
+        expression.add(element: .time)
+    }
+    
+    @IBAction func tappedDivisionButton(_ sender: UIButton) {
+        expression.add(element: .dividedBy)
+    }
+    
     @IBAction func tappedEqualButton(_ sender: UIButton) {
         expression.add(element: .equal)
     }
