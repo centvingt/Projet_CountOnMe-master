@@ -97,75 +97,56 @@ class Expression {
             return
         }
         
-        let resultArray = makeCalculations(elements: elements)
+        guard let result = calculate(elements: elements) else {
+            return
+        }
         
-        let array = ["=", "\(resultArray.first!.replacingOccurrences(of: ".", with: ","))"]
-        elements = elements + array
+        elements.append(contentsOf: ["=", "\(result)"])
     }
-    private func makeCalculations(elements: [String]) -> [String] {
-        var copyElements = elements
+    private func calculate(elements: [String]) -> String? {
+        var resultElements = elements
         
-        if copyElements.contains("×") {
-            var multiplicationElements = [String]()
+        multiplicationsAndDivisions(resultElements: &resultElements)
+        additionsAndSubstractions(result: &resultElements)
+        
+        guard let resultElement = resultElements.first,
+              let float = Float(resultElement) else {
+            return nil
+        }
+        
+        return float.rounded(.down) == float.rounded(.up)
+            ? String(Int(float))
+            : String(float).replacingOccurrences(of: ".", with: ",")
+    }
 
-            while copyElements.contains("×") {
-                if let index = copyElements.firstIndex(of: "×") {
-                    multiplicationElements += makeAdditionsAndSubstractions(elements: Array(copyElements.prefix(index)))
-                    copyElements.removeSubrange(0...index)
-                }
-            }
-            multiplicationElements += makeDivisions(elements: copyElements)
-            while multiplicationElements.count > 1 {
-                let left = Float(multiplicationElements[0])!
-                let right = Float(multiplicationElements[1])!
-                let result = left * right
-                multiplicationElements = Array(multiplicationElements.dropFirst(2))
-                multiplicationElements.insert("\(result)", at: 0)
-            }
-    //        divisionElements[0] = divisionElements[0].replacingOccurrences(of: ".", with: ",")
-            return multiplicationElements
-        }
-        if copyElements.contains("÷") {
-            return makeDivisions(elements: copyElements)
-        }
-        return makeAdditionsAndSubstractions(elements: copyElements)
-    }
-    private func makeDivisions(elements: [String]) -> [String] {
-        var copyElements = elements
-        var divisionElements = [String]()
-
-        while copyElements.contains("÷") {
-            if let index = copyElements.firstIndex(of: "÷") {
-                divisionElements += makeAdditionsAndSubstractions(elements: Array(copyElements.prefix(index)))
-                copyElements.removeSubrange(0...index)
-            }
-        }
-        divisionElements += makeAdditionsAndSubstractions(elements: copyElements)
-        while divisionElements.count > 1 {
-            let left = Float(divisionElements[0])!
-            let right = Float(divisionElements[1])!
-            let result = left / right
-            divisionElements = Array(divisionElements.dropFirst(2))
-            divisionElements.insert("\(result)", at: 0)
-        }
-        return divisionElements
-    }
-    private func makeAdditionsAndSubstractions(elements: [String]) -> [String] {
-        var operationsToReduce = elements
-        
+    private func multiplicationsAndDivisions(resultElements: inout [String]) {
         // Iterate over operations while an operand still here
-        while operationsToReduce.count > 1 {
-            let left = Int(operationsToReduce[0])!
-            let operand = operationsToReduce[1]
-            let right = Int(operationsToReduce[2])!
+        while resultElements.contains("×") || resultElements.contains("÷") {
+            guard
+                let opIndex = resultElements.firstIndex(where: { (string) -> Bool in
+                    string == "×" || string == "÷"
+                }),
+                let left = Float(resultElements[opIndex - 1]),
+                let right = Float(resultElements[opIndex + 1])
+            else { return }
             
-            let result = operand == "+" ? left + right : left - right
+            let op = resultElements[opIndex]
+            let productOrQuotient = [String(op == "×" ? left * right : left / right)]
             
-            operationsToReduce = Array(operationsToReduce.dropFirst(3))
-            operationsToReduce.insert("\(result)", at: 0)
+            let leftIndex = opIndex - 1
+            let rightIndex = opIndex + 1
+            resultElements.replaceSubrange(leftIndex...rightIndex, with: productOrQuotient)
         }
-        
-        return operationsToReduce
+    }
+    private func additionsAndSubstractions(result: inout [String]) {
+        while result.count >= 3 {
+            guard let left = Float(result[0]),
+                  let right = Float(result[2]) else { return }
+            
+            let op = result[1]
+            let sumOrDifference = [String(op ==  "+" ? left + right : left - right)]
+            result.replaceSubrange(0...2, with: sumOrDifference)
+        }
     }
     private func getOperatorString(from element: Element) -> String {
         switch element {
