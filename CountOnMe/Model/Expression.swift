@@ -11,7 +11,6 @@ import Foundation
 class Expression {
     var elements = [String]() {
         didSet {
-            print(elements)
             let notification = Notification(name: .udpatedExpression)
             NotificationCenter.default.post(notification)
         }
@@ -23,12 +22,6 @@ class Expression {
              time,
              dividedBy,
              equal
-    }
-    private enum Operand: String {
-        case plus = "+",
-             minus = "-",
-             time = "×",
-             dividedBy = "÷"
     }
     
     // Error check computed variables
@@ -97,9 +90,7 @@ class Expression {
             return
         }
         
-        guard let result = calculate(elements: elements) else {
-            return
-        }
+        let result = calculate(elements: elements)!
         
         elements.append(contentsOf: ["=", "\(result)"])
     }
@@ -109,14 +100,15 @@ class Expression {
         multiplicationsAndDivisions(resultElements: &resultElements)
         additionsAndSubstractions(result: &resultElements)
         
-        guard let resultElement = resultElements.first,
-              let float = Float(resultElement) else {
-            return nil
-        }
+        let resultElement = resultElements.first!
+        let float = Float(resultElement)!
         
         return float.rounded(.down) == float.rounded(.up)
             ? String(Int(float))
-            : String(float).replacingOccurrences(of: ".", with: ",")
+            : String(float).replacingOccurrences(
+                of: ".",
+                with: ","
+            )
     }
 
     private func multiplicationsAndDivisions(resultElements: inout [String]) {
@@ -131,11 +123,19 @@ class Expression {
             else { return }
             
             let op = resultElements[opIndex]
-            let productOrQuotient = [String(op == "×" ? left * right : left / right)]
+            let productOrQuotient = [
+                String( op == "×"
+                    ? left * right
+                    : left / right
+                )
+            ]
             
             let leftIndex = opIndex - 1
             let rightIndex = opIndex + 1
-            resultElements.replaceSubrange(leftIndex...rightIndex, with: productOrQuotient)
+            resultElements.replaceSubrange(
+                leftIndex...rightIndex,
+                with: productOrQuotient
+            )
         }
     }
     private func additionsAndSubstractions(result: inout [String]) {
@@ -156,10 +156,8 @@ class Expression {
             return "-"
         case .time:
             return "×"
-        case .dividedBy:
+        default:
             return "÷"
-        case .number, .equal:
-            fatalError("This is not an operator!")
         }
     }
 }

@@ -11,16 +11,16 @@ import XCTest
 
 class ExpressionTestCase: XCTestCase {
     var expression: Expression!
-    var notificationIsPosted: Bool!
+    var isNotificationPosted: Bool!
     
     override func setUp() {
         super.setUp()
         expression = Expression()
-        notificationIsPosted = false
+        isNotificationPosted = false
     }
     
     @objc func notificationPosted() {
-        notificationIsPosted = true
+        isNotificationPosted = true
     }
     
     func testGivenExpressionHaveResult_WhenNumberAdded_ThenExpressionHasOnlyNumber() {
@@ -34,7 +34,17 @@ class ExpressionTestCase: XCTestCase {
         XCTAssert(expression.elements == ["2"])
     }
     
-    func testGivenExpressionHaventResult_WhenNumberAdded_ThenNumberAddedToExpression_Then() {
+    func testGivenExpressionHaventResult_WhenNumberAdded_ThenNumberAddedToExpression() {
+        // Given
+        expression.elements = ["2","+"]
+        
+        // When
+        expression.add(element: .number("2"))
+        
+        // Then
+        XCTAssert(expression.elements == ["2","+","2"])
+    }
+    func testGivenLastElementExpressionIsNumber_WhenNewNumberAdded_ThenNewNumberAddedToExpression() {
         // Given
         expression.elements = ["2","+","2"]
         
@@ -70,10 +80,10 @@ class ExpressionTestCase: XCTestCase {
                 XCTFail("timeout errored: \(error)")
                 return
             }
-            XCTAssert(self.notificationIsPosted)
+            XCTAssert(self.isNotificationPosted)
         }
     }
-    func testGivenCanAddOperator_WhenMinusAdded_ThenOperatorAddedToExpression() {
+    func testGivenCanAddOperator_WhenMinusAdded_ThenMinusAddedToExpression() {
         // Given
         expression.elements = ["2","+","2"]
         
@@ -83,7 +93,7 @@ class ExpressionTestCase: XCTestCase {
         // Then
         XCTAssert(expression.elements == ["2","+","2","-"])
     }
-    func testGivenCanAddOperator_WhenPlusAdded_ThenOperatorAddedToExpression() {
+    func testGivenCanAddOperator_WhenPlusAdded_ThenPlusAddedToExpression() {
         // Given
         expression.elements = ["2","+","2"]
         
@@ -93,7 +103,27 @@ class ExpressionTestCase: XCTestCase {
         // Then
         XCTAssert(expression.elements == ["2","+","2","+"])
     }
-
+    func testGivenCanAddOperator_WhenTimeAdded_ThenTimeAddedToExpression() {
+        // Given
+        expression.elements = ["2","+","2"]
+        
+        // When
+        expression.add(element: .time)
+        
+        // Then
+        XCTAssert(expression.elements == ["2","+","2","×"])
+    }
+    func testGivenCanAddOperator_WhenDividedByAdded_ThenDividedByAddedToExpression() {
+        // Given
+        expression.elements = ["2","+","2"]
+        
+        // When
+        expression.add(element: .dividedBy)
+        
+        // Then
+        XCTAssert(expression.elements == ["2","+","2","÷"])
+    }
+    
     func testGivenExpressionNotCorrect_WhenEqualAdded_ThenNotificationPosted() {
         // Given
         expression.elements = ["2","+"]
@@ -120,7 +150,7 @@ class ExpressionTestCase: XCTestCase {
                 XCTFail("timeout errored: \(error)")
                 return
             }
-            XCTAssert(self.notificationIsPosted)
+            XCTAssert(self.isNotificationPosted)
         }
     }
     func testGivenNotEnoughElement_WhenEqualAdded_ThenNotificationPosted() {
@@ -149,12 +179,12 @@ class ExpressionTestCase: XCTestCase {
                 XCTFail("timeout errored: \(error)")
                 return
             }
-            XCTAssert(self.notificationIsPosted)
+            XCTAssert(self.isNotificationPosted)
         }
     }
     func testGivenEnoughElement_WhenEqualAdded_ThenResultSet() {
         // Given
-        expression.elements = ["2","+","2","-","2"]
+        expression.elements = ["2","+","2","-","2","×","2","÷","2"]
         
         // When
         expression.add(element: .equal)
@@ -167,12 +197,33 @@ class ExpressionTestCase: XCTestCase {
                 "2",
                 "-",
                 "2",
+                "×",
+                "2",
+                "÷",
+                "2",
                 "=",
                 "2"
             ]
         )
     }
-
+    func testGivenFloatExpressionResult_WhenEqualAdded_ThenResultContainsComma() {
+        // Given
+        expression.elements = ["7","÷","52"]
+        
+        // When
+        expression.add(element: .equal)
+        
+        // Then
+        XCTAssert(
+            expression.elements == [
+                "7",
+                "÷", 
+                "52", 
+                "=", 
+                "0,13461539"
+            ]
+        )
+    }
 }
 
 
