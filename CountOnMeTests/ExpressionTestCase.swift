@@ -23,7 +23,7 @@ class ExpressionTestCase: XCTestCase {
         isNotificationPosted = true
     }
     
-    func testGivenExpressionHaveResult_WhenNumberAdded_ThenExpressionHasOnlyNumber() {
+    func testGivenExpressionHasResult_WhenNumberAdded_ThenExpressionHasOnlyNumber() {
         // Given
         expression.elements = ["2","+","2","=","4"]
         
@@ -34,7 +34,7 @@ class ExpressionTestCase: XCTestCase {
         XCTAssert(expression.elements == ["2"])
     }
     
-    func testGivenExpressionHaventResult_WhenNumberAdded_ThenNumberAddedToExpression() {
+    func testGivenExpressionHasntResult_WhenNumberAdded_ThenNumberAddedToExpression() {
         // Given
         expression.elements = ["2","+"]
         
@@ -217,12 +217,41 @@ class ExpressionTestCase: XCTestCase {
         XCTAssert(
             expression.elements == [
                 "7",
-                "÷", 
-                "52", 
-                "=", 
+                "÷",
+                "52",
+                "=",
                 "0,13461539"
             ]
         )
+    }
+    func testGivenExpressionHasResult_WhenEqualAdded_ThenResultNotificationPosted() {
+        // Given
+        expression.elements = ["2","+","2","=","4"]
+        
+        // When
+        let notificationName = Notification.Name.notEnoughElement
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(notificationPosted),
+            name: notificationName,
+            object: nil
+        )
+        expectation(
+            forNotification: notificationName,
+            object: nil,
+            handler: nil
+        )
+        
+        expression.add(element: .equal)
+        
+        // Then
+        waitForExpectations(timeout: 0.1) { (error) in
+            if let error = error {
+                XCTFail("timeout errored: \(error)")
+                return
+            }
+            XCTAssert(self.isNotificationPosted)
+        }
     }
 }
 
