@@ -262,6 +262,74 @@ class ExpressionTestCase: XCTestCase {
             XCTAssert(self.isNotificationPosted)
         }
     }
+    func testGivenExpressionHasDivisionByZero_WhenEqualAdded_ThenNoResultAndNotificationPosted() {
+        // Given
+        expression.elements = ["2","+","2","÷","0","×","8"]
+        
+        // When
+        let notificationName = Notification.Name.divisionByZero
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(notificationPosted),
+            name: notificationName,
+            object: nil
+        )
+        expectation(
+            forNotification: notificationName,
+            object: nil,
+            handler: nil
+        )
+        
+        expression.add(element: .equal)
+        
+        // Then
+        waitForExpectations(timeout: 0.1) { (error) in
+            if let error = error {
+                XCTFail("timeout errored: \(error)")
+                return
+            }
+            XCTAssert(
+                self.expression.elements == ["2","+","2","÷","0","×","8"]
+                    && self.isNotificationPosted
+            )
+        }
+    }
+    func testGivenExpressionWithFloatResult_WhenEqualAdded_ThenResultHasComma() {
+        // Given
+        expression.elements = ["7","÷","2"]
+        
+        // When
+        expression.add(element: .equal)
+        
+        // Then
+        XCTAssert(
+            expression.elements == ["7","÷","2","=","3,5"]
+        )
+    }
+    
+    // Test deleting expression
+    func testGivenExpression_WhenClearExpression_ThenExpressionEmpty() {
+        // Given
+        expression.elements = ["2","+","2","-","2","×","2","÷","2"]
+        
+        // When
+        expression.clear()
+        
+        // Then
+        XCTAssert(
+            expression.elements == []
+        )
+    }
+    func testGivenEmptyExpression_WhenClearExpression_ThenExpressionEmpty() {
+        // Given
+        expression.elements = []
+        
+        // When
+        expression.clear()
+        
+        // Then
+        XCTAssert(
+            expression.elements == []
+        )
+    }
 }
-
-

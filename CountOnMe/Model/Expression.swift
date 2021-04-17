@@ -99,6 +99,11 @@ class Expression {
         }
     }
     
+    // Clear expression's elements
+    func clear() {
+        elements = []
+    }
+    
     // Add result to expression
     private func setResult() {
         // Post notification if expression's last element is an operator
@@ -108,7 +113,7 @@ class Expression {
             return
         }
         
-        /* Post notification if expressio is incomplete
+        /* Post notification if expression is incomplete
          or if it has already a result */
         guard haveEnoughElement && !hasResult else {
             let notification = Notification(name: .notEnoughElement)
@@ -117,19 +122,34 @@ class Expression {
         }
         
         // Get expression's result
-        let result = calculate(elements: elements)
+        guard let result = calculate(elements: elements) else {
+            return
+        }
         
         // Add result to expression
         elements.append(contentsOf: ["=", "\(result)"])
     }
     
     // Run result's calculation
-    private func calculate(elements: [String]) -> String {
+    private func calculate(elements: [String]) -> String? {
         // Create local copy of expression's elements
         var resultElements = elements
         
+        /* Indicates the presence of a division by zero,
+         used by multiplicationsAndDivisions() */
+        var noDivisionByZero = true
+        
         // First, run multiplications and divisions
-        multiplicationsAndDivisions(resultElements: &resultElements)
+        multiplicationsAndDivisions(
+            resultElements: &resultElements,
+            noDivisionByZero: &noDivisionByZero
+        )
+        
+        /* multiplicationsAndDivisions() can set noDivisionByZero
+         to false, in which case calculate return nil */
+        guard noDivisionByZero else {
+            return nil
+        }
         
         // Then, run additions and substractions
         additionsAndSubstractions(result: &resultElements)
@@ -154,9 +174,13 @@ class Expression {
     }
     
     // Process multiplications and divisions of the expression
-    private func multiplicationsAndDivisions(resultElements: inout [String]) {
+    private func multiplicationsAndDivisions(
+        resultElements: inout [String],
+        noDivisionByZero: inout Bool
+    ) {
         // Iterate over operations while an operator still here
-        while resultElements.contains("×") || resultElements.contains("÷") {
+        while resultElements.contains("×")
+                || resultElements.contains("÷") {
             /* Get :
              1. index of operator in array,
              1. the operation's numbers */
@@ -170,14 +194,22 @@ class Expression {
                 let right = Float(resultElements[opIndex + 1])
             else { return }
             
+            guard right != 0 else {
+                noDivisionByZero = false
+                
+                let notification = Notification(name: .divisionByZero)
+                NotificationCenter.default.post(notification)
+                return
+            }
+            
             // Get the operation's operator
             let op = resultElements[opIndex]
             
             // Process multiplication or division
             let productOrQuotient = [
                 String( op == "×"
-                            ? left * right
-                            : left / right
+                    ? left * right
+                    : left / right
                 )
             ]
             
@@ -233,4 +265,5 @@ extension Notification.Name {
     static let operatorAlreadySet = Notification.Name("operatorAlreadySet")
     static let notCorrectExpression = Notification.Name("notCorrectExpression")
     static let notEnoughElement = Notification.Name("notEnoughElement")
+    static let divisionByZero = Notification.Name("divisionByZero")
 }

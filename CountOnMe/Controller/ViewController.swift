@@ -47,6 +47,12 @@ class ViewController: UIViewController {
             name: .notEnoughElement,
             object: nil
         )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(presentAlert),
+            name: .divisionByZero,
+            object: nil
+        )
     }
     
     // Adding number typed by user
@@ -82,6 +88,11 @@ class ViewController: UIViewController {
         expression.add(element: .equal)
     }
     
+    // Clear textView content
+    @IBAction func tappedACButton(_ sender: UIButton) {
+        expression.clear()
+    }
+    
     /* Used by notification observer for update TextView content
      each time expression is changed */
     @objc private func updateTextView() {
@@ -91,18 +102,34 @@ class ViewController: UIViewController {
     // Used by notification observer for presenting alert in case of model's error
     @objc private func presentAlert(_ notification: Notification) {
         var message: String
+        var completion: ((UIAlertAction) -> Void)? = nil
         
         switch notification.name {
         case .notCorrectExpression:
             message = "Entrez une expression correcte !"
         case .notEnoughElement:
             message = "Démarrez un nouveau calcul !"
+        case .divisionByZero:
+            message = "La division par zéro est impossible !"
+            completion = { (UIAlertAction) -> Void in
+                self.expression.clear()
+            }
         default:
             message = "Un operateur est déja mis !"
         }
         
-        let alertVC = UIAlertController(title: "Zéro!", message: message, preferredStyle: .alert)
-        alertVC.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
+        let alertVC = UIAlertController(
+            title: "Zéro!",
+            message: message,
+            preferredStyle: .alert
+        )
+        alertVC.addAction(
+            UIAlertAction(
+                title: "OK",
+                style: .cancel,
+                handler: completion
+            )
+        )
         self.present(alertVC, animated: true, completion: nil)
     }
 }
