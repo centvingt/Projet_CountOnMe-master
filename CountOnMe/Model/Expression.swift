@@ -18,7 +18,7 @@ class Expression {
         }
     }
     
-    // Elements added by user to expression
+    // Allowed elements in expression
     enum Element {
         case number(String),
              plus,

@@ -10,19 +10,26 @@ import XCTest
 @testable import CountOnMe
 
 class ExpressionTestCase: XCTestCase {
+    // Expression's instance
     var expression: Expression!
+    
+    // Check that a notification has been posted
     var isNotificationPosted: Bool!
     
+    // setUp() is executed for each test
     override func setUp() {
         super.setUp()
         expression = Expression()
         isNotificationPosted = false
     }
     
+    /* notificationPosted() is executed
+     when a notification is observed */
     @objc func notificationPosted() {
         isNotificationPosted = true
     }
     
+    // Numbers's tests
     func testGivenExpressionHasResult_WhenNumberAdded_ThenExpressionHasOnlyNumber() {
         // Given
         expression.elements = ["2","+","2","=","4"]
@@ -33,7 +40,6 @@ class ExpressionTestCase: XCTestCase {
         // Then
         XCTAssert(expression.elements == ["2"])
     }
-    
     func testGivenExpressionHasntResult_WhenNumberAdded_ThenNumberAddedToExpression() {
         // Given
         expression.elements = ["2","+"]
@@ -54,6 +60,8 @@ class ExpressionTestCase: XCTestCase {
         // Then
         XCTAssert(expression.elements == ["2","+","22"])
     }
+    
+    // Operator's tests
     func testGivenCantAddOperator_WhenOperatorAdded_ThenNotificationPosted() {
         // Given
         expression.elements = ["2","+"]
@@ -124,6 +132,7 @@ class ExpressionTestCase: XCTestCase {
         XCTAssert(expression.elements == ["2","+","2","÷"])
     }
     
+    // Equal's tests
     func testGivenExpressionNotCorrect_WhenEqualAdded_ThenNotificationPosted() {
         // Given
         expression.elements = ["2","+"]
